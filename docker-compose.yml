@@ -28,8 +28,8 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - Features__SendErrorResponse=false
-      - Features__EnableRetry=false
+      - Features__SendErrorResponse=true
+      - Features__EnableRetry=true
     networks:
       - rabbitmq_network
     restart: on-failure
@@ -44,7 +44,8 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - Features__HandleErrors=false
+      - Features__HandleErrors=true
+      - Worker__DelayInMs=200
     networks:
       - rabbitmq_network
     restart: on-failure

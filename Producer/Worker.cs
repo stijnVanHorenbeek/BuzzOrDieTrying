@@ -69,7 +69,8 @@ public class Worker : BackgroundService
                 }
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+            var delayInMs = _configuration.GetValue("Worker:DelayInMs", 500);
+            await Task.Delay(TimeSpan.FromMilliseconds(delayInMs), stoppingToken);
         }
     }
 }
