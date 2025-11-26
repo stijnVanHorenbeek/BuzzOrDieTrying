@@ -17,7 +17,7 @@ builder.Services.AddHealthChecks();
 builder.Services.AddMassTransit(x =>
 {
     x.AddConsumer<RequestMessageConsumer>();
-    
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("rabbitmq", "/", h =>
@@ -25,18 +25,23 @@ builder.Services.AddMassTransit(x =>
             h.Username("guest");
             h.Password("guest");
         });
-        
+
         cfg.ReceiveEndpoint("request_queue", e =>
         {
-            e.UseMessageRetry(r =>
+            var enableRetry = builder.Configuration.GetValue("Features:EnableRetry", true);
+
+            if (enableRetry)
             {
-                r.Exponential(
-                    retryLimit: 3,
-                    intervalDelta: TimeSpan.FromSeconds(1),
-                    maxInterval: TimeSpan.FromSeconds(10),
-                    minInterval: TimeSpan.FromSeconds(1)
-                );
-            });
+                e.UseMessageRetry(r =>
+                {
+                    r.Exponential(
+                        retryLimit: 5,
+                        intervalDelta: TimeSpan.FromSeconds(1),
+                        maxInterval: TimeSpan.FromSeconds(10),
+                        minInterval: TimeSpan.FromSeconds(1)
+                    );
+                });
+            }
 
             e.ConfigureConsumer<RequestMessageConsumer>(context);
         });
