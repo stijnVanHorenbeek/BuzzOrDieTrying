@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - rabbitmq_network
+
+  consumer:
+    build:
+      context: .
+      dockerfile: Consumer/Dockerfile
+    container_name: consumer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - rabbitmq_network
+    restart: on-failure
+
+  producer:
+    build:
+      context: .
+      dockerfile: Producer/Dockerfile
+    container_name: producer
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+    networks:
+      - rabbitmq_network
+    restart: on-failure
+
+networks:
+  rabbitmq_network:
+    driver: bridge
