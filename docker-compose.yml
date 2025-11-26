@@ -45,7 +45,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Features__HandleErrors=true
-      - Worker__DelayInMs=2000
+      - Worker__DelayInMs=200
     networks:
       - rabbitmq_network
     restart: on-failure
