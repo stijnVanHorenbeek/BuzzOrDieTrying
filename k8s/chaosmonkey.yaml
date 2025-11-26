@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: chaosmonkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: chaosmonkey
+  template:
+    metadata:
+      labels:
+        app: chaosmonkey
+    spec:
+      containers:
+      - name: chaosmonkey
+        image: chaosmonkey:latest
+        ports:
+        - containerPort: 80
+        env:
+        - name: RABBIT_HOST
+          value: "rabbitmq"
+        - name: RABBIT_USER
+          value: "guest"
+        - name: RABBIT_PASS
+          value: "guest"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 2
+          periodSeconds: 5
