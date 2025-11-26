@@ -20,7 +20,7 @@ INTERVAL = int(os.environ.get('INTERVAL', '10'))
 app = Flask(__name__)
 
 
-@app.route("health")
+@app.route("/health")
 def health_check():
     return "OK", 200
 

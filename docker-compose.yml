@@ -45,7 +45,25 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Features__HandleErrors=true
-      - Worker__DelayInMs=200
+      - Worker__DelayInMs=2000
+    networks:
+      - rabbitmq_network
+    restart: on-failure
+
+  chaosmonkey:
+    build:
+      context: ./chaosmonkey
+      dockerfile: Dockerfile
+    container_name: chaosmonkey
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=15672
+      - RABBIT_USER=guest
+      - RABBIT_PASS=guest
+      - INTERVAL=10
     networks:
       - rabbitmq_network
     restart: on-failure
