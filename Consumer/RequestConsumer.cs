@@ -5,10 +5,12 @@ using Contracts;
 public class RequestMessageConsumer : IConsumer<RequestMessage>
 {
     private readonly ILogger<RequestMessageConsumer> _logger;
+    private readonly IConfiguration _configuration;
 
-    public RequestMessageConsumer(ILogger<RequestMessageConsumer> logger)
+    public RequestMessageConsumer(ILogger<RequestMessageConsumer> logger, IConfiguration configuration)
     {
         _logger = logger;
+        _configuration = configuration;
     }
 
     public async Task Consume(ConsumeContext<RequestMessage> context)
@@ -16,9 +18,7 @@ public class RequestMessageConsumer : IConsumer<RequestMessage>
         _logger.LogInformation("Received RequestMessage: {Text}", context.Message.Counter);
 
         var value = context.Message.Counter;
-        var n = 3;
-        var m = 5;
-
+        
         try
         {
             string result;
@@ -58,14 +58,25 @@ public class RequestMessageConsumer : IConsumer<RequestMessage>
         {
             _logger.LogError(ex, "Error processing message with counter: {Counter}", value);
 
-            var errorResponse = new ResponseMessage
-            {
-                Result = string.Empty,
-                HasError = true,
-                ErrorMessage = ex.Message
-            };
+            var sendErrorResponse = _configuration.GetValue("Features:SendErrorResponse", true);
 
-            await context.RespondAsync(errorResponse);
+            if (sendErrorResponse)
+            {
+                var errorResponse = new ResponseMessage
+                {
+                    Result = string.Empty,
+                    HasError = true,
+                    ErrorMessage = ex.Message
+                };
+
+                await context.RespondAsync(errorResponse);
+                _logger.LogInformation("Sent error response for counter: {Counter}", value);
+            }
+            else
+            {
+                _logger.LogWarning("Error response NOT sent due to feature toggle for counter: {Counter}", value);
+                throw;
+            }
         }
     }
 }

@@ -31,7 +31,7 @@ builder.Services.AddMassTransit(x =>
             e.UseMessageRetry(r =>
             {
                 r.Exponential(
-                    retryLimit: 5,
+                    retryLimit: 3,
                     intervalDelta: TimeSpan.FromSeconds(1),
                     maxInterval: TimeSpan.FromSeconds(10),
                     minInterval: TimeSpan.FromSeconds(1)

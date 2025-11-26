@@ -28,6 +28,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - Features__SendErrorResponse=false
     networks:
       - rabbitmq_network
     restart: on-failure
@@ -42,6 +43,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
+      - Features__HandleErrors=false
     networks:
       - rabbitmq_network
     restart: on-failure
