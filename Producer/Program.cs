@@ -17,6 +17,8 @@ builder.Logging.AddSerilog(new
 builder.Services.AddHealthChecks();
 builder.Services.AddMassTransit(x =>
 {
+    x.AddConsumer<SimpleBatchConsumer>();
+
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("rabbitmq", "/", h =>
@@ -25,6 +27,16 @@ builder.Services.AddMassTransit(x =>
             h.Password("guest");
         });
 
+        cfg.ReceiveEndpoint("simple_message_queue", e =>
+        {
+            e.PrefetchCount = 50;
+            e.Batch<SimpleMessage>(b =>
+            {
+                b.MessageLimit = 100;
+                b.TimeLimit = TimeSpan.FromSeconds(2);
+                b.Consumer<SimpleBatchConsumer, SimpleMessage>(context);
+            });
+        });
     });
 
     x.AddRequestClient<RequestMessage>();
