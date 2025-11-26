@@ -25,7 +25,15 @@ public class Worker : BackgroundService
             try
             {
                 var response = await _client.GetResponse<ResponseMessage>(new RequestMessage { Counter = _counter }, stoppingToken);
-                _logger.LogInformation("Received response: {Result}", response.Message.Result);
+
+                if (response.Message.HasError)
+                {
+                    _logger.LogError("Received error response for counter {Counter}: {ErrorMessage}", _counter, response.Message.ErrorMessage);
+                }
+                else
+                {
+                    _logger.LogInformation("Received response: {Result}", response.Message.Result);
+                }
             }
             catch (RequestTimeoutException ex)
             {
