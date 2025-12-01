@@ -31,7 +31,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Features__EnableRetry=true
-      - Features__UseErrorFilter=false
+      - Features__UseErrorFilter=true
     ports:
       - "8081:8080"
     networks:
@@ -48,7 +48,7 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - Features__UseErrorFilter=false
+      - Features__UseErrorFilter=true
       - Worker__DelayInMs=1000
       - Worker__BatchSize=5000
       - Worker__MaxMessages=25000
@@ -58,23 +58,25 @@ services:
       - rabbitmq_network
     restart: on-failure
 
-  # chaosmonkey:
-  #   build:
-  #     context: ./chaosmonkey
-  #     dockerfile: Dockerfile
-  #   container_name: chaosmonkey
-  #   depends_on:
-  #     rabbitmq:
-  #       condition: service_healthy
-  #   environment:
-  #     - RABBIT_HOST=rabbitmq
-  #     - RABBIT_PORT=15672
-  #     - RABBIT_USER=guest
-  #     - RABBIT_PASS=guest
-  #     - INTERVAL=10
-  #   networks:
-  #     - rabbitmq_network
-  #   restart: on-failure
+  chaosmonkey:
+    build:
+      context: ./chaosmonkey
+      dockerfile: Dockerfile
+    container_name: chaosmonkey
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBIT_HOST=rabbitmq
+      - RABBIT_PORT=15672
+      - RABBIT_USER=guest
+      - RABBIT_PASS=guest
+      - INTERVAL=45
+    ports:
+      - "8082:8080"
+    networks:
+      - rabbitmq_network
+    restart: on-failure
 
 networks:
   rabbitmq_network:
