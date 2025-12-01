@@ -6,7 +6,7 @@ using Serilog;
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddSerilog(new 
+builder.Logging.AddSerilog(new
     LoggerConfiguration()
     .WriteTo.Console()
     .MinimumLevel.Debug()
@@ -29,10 +29,11 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ReceiveEndpoint("simple_message_queue", e =>
         {
-            e.PrefetchCount = 50;
+            e.UseInMemoryOutbox(context);
+            e.PrefetchCount = 500;
             e.Batch<SimpleMessage>(b =>
             {
-                b.MessageLimit = 100;
+                b.MessageLimit = 250;
                 b.TimeLimit = TimeSpan.FromSeconds(2);
                 b.Consumer<SimpleBatchConsumer, SimpleMessage>(context);
             });

@@ -27,47 +27,24 @@ public class SimpleBatchConsumer : IConsumer<Batch<SimpleMessage>>
             var counter = message.Message.Counter;
             _logger.LogInformation("Processing message from batch with counter: {Counter}", counter);
 
-            if (handleErrors)
+            try
             {
-                try
-                {
-                    var response = await _client.GetResponse<ResponseMessage>(new RequestMessage { Counter = counter }, context.CancellationToken);
-
-                    if (response.Message.HasError)
-                    {
-                        _logger.LogError("Received error response for counter {Counter}: {ErrorMessage}", counter, response.Message.ErrorMessage);
-                    }
-                    else
-                    {
-                        _logger.LogInformation("Received response for counter {Counter}: {Result}", counter, response.Message.Result);
-                    }
-                }
-                catch (RequestTimeoutException ex)
-                {
-                    _logger.LogError(ex, "Request timeout - possible RabbitMQ connection issue with counter: {Counter}", counter);
-                }
-                catch (OperationCanceledException ex)
-                {
-                    _logger.LogWarning(ex, "Request cancelled with counter: {Counter}", counter);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error while requesting with counter: {Counter}. Exception Type: {ExceptionType}", counter, ex.GetType().Name);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("Error handling DISABLED - exceptions will crash the batch consumer");
                 var response = await _client.GetResponse<ResponseMessage>(new RequestMessage { Counter = counter }, context.CancellationToken);
-
-                if (response.Message.HasError)
-                {
-                    _logger.LogError("Received error response for counter {Counter}: {ErrorMessage}", counter, response.Message.ErrorMessage);
-                }
-                else
-                {
-                    _logger.LogInformation("Received response for counter {Counter}: {Result}", counter, response.Message.Result);
-                }
+            }
+            catch (RequestTimeoutException ex)
+            {
+                _logger.LogError(ex, "Request timeout");
+                throw;
+            }
+            catch (OperationCanceledException ex)
+            {
+                _logger.LogWarning(ex, "Request cancelled");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while requesting with counter: {Counter}. Exception Type: {ExceptionType}", counter, ex.GetType().Name);
+                throw;
             }
         }
 

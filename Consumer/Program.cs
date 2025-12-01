@@ -1,12 +1,17 @@
+using Consumer;
 using MassTransit;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddSerilog(new 
+builder.Logging.AddSerilog(new
         LoggerConfiguration()
-    .WriteTo.Console()
+    .WriteTo.Console(
+        theme: AnsiConsoleTheme.Code,
+        outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        applyThemeToRedirectedOutput: true)
     .MinimumLevel.Debug()
     .ReadFrom.Configuration(builder.Configuration)
     .Enrich.FromLogContext()
@@ -42,6 +47,7 @@ builder.Services.AddMassTransit(x =>
                 });
             }
 
+            e.UseInMemoryOutbox(context);
             e.ConfigureConsumer<RequestMessageConsumer>(context);
         });
     });

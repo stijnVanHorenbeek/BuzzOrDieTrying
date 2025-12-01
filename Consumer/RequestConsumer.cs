@@ -2,6 +2,8 @@ using MassTransit;
 using Microsoft.Extensions.Logging;
 using Contracts;
 
+namespace Consumer;
+
 public class RequestMessageConsumer : IConsumer<RequestMessage>
 {
     private readonly ILogger<RequestMessageConsumer> _logger;
@@ -17,66 +19,13 @@ public class RequestMessageConsumer : IConsumer<RequestMessage>
     {
         _logger.LogInformation("Received RequestMessage: {Text}", context.Message.Counter);
 
-        var value = context.Message.Counter;
-        
-        try
-        {
-            string result;
-            if (value % 3 == 0 && value % 5 == 0)
-            {
-                result = "FizzBuzz";
-                _logger.LogInformation("Received message: {Value} ({Result})", value, result);
-                _logger.LogWarning("Throwing exception for value '{Value}' to test retry mechanism.", value);
-                throw new Exception("Test exception for retry mechanism.");
-            }
-            if (value % 3 == 0)
-            {
-                result = "Fizz";
-                _logger.LogInformation("Received message: {Value} (Fizz)", value);
-            }
-            else if (value % 5 == 0)
-            {
-                result = "Buzz";
-                _logger.LogInformation("Received message: {Value} (Buzz)", value);
-            }
-            else
-            {
-                result = value.ToString();
-                _logger.LogInformation("Received message: {Value} ({Result})", value, result);
-            }
+        throw CreateTestException();
+    }
 
-            var response = new ResponseMessage
-            {
-                Result = result,
-                HasError = false,
-                ErrorMessage = null
-            };
+    static AggregateException CreateTestException(int value = 5000)
+    {
+        var inners = Enumerable.Range(0, value).Select(i => new Exception($"Test Exception {i}")).ToArray();
 
-            await context.RespondAsync(response);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error processing message with counter: {Counter}", value);
-
-            var sendErrorResponse = _configuration.GetValue("Features:SendErrorResponse", true);
-
-            if (sendErrorResponse)
-            {
-                var errorResponse = new ResponseMessage
-                {
-                    Result = string.Empty,
-                    HasError = true,
-                    ErrorMessage = ex.Message
-                };
-
-                await context.RespondAsync(errorResponse);
-                _logger.LogInformation("Sent error response for counter: {Counter}", value);
-            }
-            else
-            {
-                _logger.LogWarning("Error response NOT sent due to feature toggle for counter: {Counter}", value);
-                throw;
-            }
-        }
+        return new AggregateException("This is a test AggregateException", inners);
     }
 }

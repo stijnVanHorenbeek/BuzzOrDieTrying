@@ -20,13 +20,12 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         while (!stoppingToken.IsCancellationRequested && _counter < MaxMessages)
         {
             _logger.LogInformation("Publishing batch of 100 messages starting at counter: {Counter}", _counter + 1);
 
-            var handleErrors = _configuration.GetValue("Features:HandleErrors", true);
             var delayInMs = _configuration.GetValue("Worker:DelayInMs", 500);
-
             var messages = new List<SimpleMessage>();
             var batchSize = Math.Min(100, MaxMessages - _counter);
             for (int i = 0; i < batchSize; i++)
@@ -35,23 +34,14 @@ public class Worker : BackgroundService
                 messages.Add(new SimpleMessage { Counter = _counter });
             }
 
-            if (handleErrors)
+            try
             {
-                try
-                {
-                    await _bus.PublishBatch(messages, stoppingToken);
-                    _logger.LogInformation("Successfully published {Count} messages ending at counter: {Counter}", batchSize, _counter);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error while publishing batch. Exception Type: {ExceptionType}", ex.GetType().Name);
-                }
-            }
-            else
-            {
-                _logger.LogWarning("Error handling DISABLED - exceptions will crash the producer");
                 await _bus.PublishBatch(messages, stoppingToken);
                 _logger.LogInformation("Successfully published {Count} messages ending at counter: {Counter}", batchSize, _counter);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error while publishing batch. Exception Type: {ExceptionType}", ex.GetType().Name);
             }
 
             await Task.Delay(TimeSpan.FromMilliseconds(delayInMs), stoppingToken);
