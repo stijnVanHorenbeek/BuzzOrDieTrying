@@ -32,6 +32,14 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ReceiveEndpoint("simple_message_queue", e =>
         {
+            var useErrorFilter = builder.Configuration.GetValue("Features:UseErrorFilter", false);
+            if (useErrorFilter)
+            {
+                e.ConfigureError(x =>
+                        {
+                            x.UseFilter(new ShortFaultHeaderFilter());
+                        });
+            }
             e.UseInMemoryOutbox(context);
             e.PrefetchCount = 500;
             e.Batch<SimpleMessage>(b =>

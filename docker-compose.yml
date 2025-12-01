@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   rabbitmq:
-    image: rabbitmq:3-management
+    image: masstransit/rabbitmq:latest
     container_name: rabbitmq
     ports:
       - "5672:5672"
@@ -14,7 +14,9 @@ services:
       test: rabbitmq-diagnostics -q ping
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 5 
+    tmpfs:
+      - /var/lib/rabbitmq
     networks:
       - rabbitmq_network
 
@@ -28,8 +30,8 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - Features__SendErrorResponse=false
-      - Features__EnableRetry=false
+      - Features__EnableRetry=true
+      - Features__UseErrorFilter=true
     networks:
       - rabbitmq_network
     restart: on-failure
@@ -44,8 +46,10 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - Features__HandleErrors=true
+      - Features__UseErrorFilter=true
       - Worker__DelayInMs=1000
+      - Worker__BatchSize=5000
+      - Worker__MaxMessages=25000
     networks:
       - rabbitmq_network
     restart: on-failure

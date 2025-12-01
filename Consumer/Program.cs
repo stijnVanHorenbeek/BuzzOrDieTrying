@@ -31,6 +31,15 @@ builder.Services.AddMassTransit(x =>
 
         cfg.ReceiveEndpoint("request_queue", e =>
         {
+            var useErrorFilter = builder.Configuration.GetValue("Features:UseErrorFilter", false);
+            if (useErrorFilter)
+            {
+                e.ConfigureError(x =>
+                        {
+                            x.UseFilter(new ShortFaultHeaderFilter());
+                        });
+            }
+
             var enableRetry = builder.Configuration.GetValue("Features:EnableRetry", true);
 
             if (enableRetry)
@@ -46,7 +55,7 @@ builder.Services.AddMassTransit(x =>
                 });
             }
 
-            e.UseInMemoryOutbox(context);
+            // e.UseInMemoryOutbox(context);
             e.ConfigureConsumer<RequestMessageConsumer>(context);
         });
     });
