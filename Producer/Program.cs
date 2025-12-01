@@ -2,17 +2,20 @@ using Contracts;
 using Producer;
 using MassTransit;
 using Serilog;
+using Serilog.Sinks.SystemConsole.Themes;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.Logging.ClearProviders();
-builder.Logging.AddSerilog(new
-    LoggerConfiguration()
-    .WriteTo.Console()
-    .MinimumLevel.Debug()
-    .ReadFrom.Configuration(builder.Configuration)
-    .Enrich.FromLogContext()
-    .CreateLogger());
+builder.Logging.AddSerilog(new LoggerConfiguration()
+        .Enrich.FromLogContext()
+        .WriteTo.Console(
+            theme: AnsiConsoleTheme.Code,
+            outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+            applyThemeToRedirectedOutput: true)
+        .MinimumLevel.Debug()
+        .ReadFrom.Configuration(builder.Configuration)
+        .CreateLogger());
 
 builder.Services.AddHealthChecks();
 builder.Services.AddMassTransit(x =>
