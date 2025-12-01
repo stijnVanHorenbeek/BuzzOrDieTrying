@@ -9,7 +9,6 @@ public class Worker : BackgroundService
     private readonly ILogger<Worker> _logger;
     private readonly IConfiguration _configuration;
     private int _counter = 0;
-    private const int MaxMessages = 20_000;
 
     public Worker(IBus bus, ILogger<Worker> logger, IConfiguration configuration)
     {
@@ -20,14 +19,18 @@ public class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var MaxMessages = _configuration.GetValue("Worker:MaxMessages", 20_000);
+        var delayInMs = _configuration.GetValue("Worker:DelayInMs", 500);
+        var batchSize = _configuration.GetValue("Worker:BatchSize", 1000);
+
         await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+
         while (!stoppingToken.IsCancellationRequested && _counter < MaxMessages)
         {
             _logger.LogInformation("Publishing batch of 100 messages starting at counter: {Counter}", _counter + 1);
 
-            var delayInMs = _configuration.GetValue("Worker:DelayInMs", 500);
             var messages = new List<SimpleMessage>();
-            var batchSize = Math.Min(100, MaxMessages - _counter);
+            batchSize = Math.Min(batchSize, MaxMessages - _counter);
             for (int i = 0; i < batchSize; i++)
             {
                 _counter++;
@@ -37,7 +40,6 @@ public class Worker : BackgroundService
             try
             {
                 await _bus.PublishBatch(messages, stoppingToken);
-                _logger.LogInformation("Successfully published {Count} messages ending at counter: {Counter}", batchSize, _counter);
             }
             catch (Exception ex)
             {
