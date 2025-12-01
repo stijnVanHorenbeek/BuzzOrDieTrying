@@ -1,15 +1,19 @@
 using Consumer;
+using HealthChecks.UI.Client;
 using MassTransit;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Serilog;
 using Serilog.Sinks.SystemConsole.Themes;
 
-var builder = Host.CreateApplicationBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Logging.ClearProviders();
 builder.Logging.AddSerilog(new LoggerConfiguration()
         .Enrich.FromLogContext()
-        .WriteTo.Console(
-            theme: AnsiConsoleTheme.Code,
+        .WriteTo.Console(theme: AnsiConsoleTheme.Code,
             outputTemplate: "{Timestamp:HH:mm:ss} [{Level:u3}] {Message:lj}{NewLine}{Exception}",
             applyThemeToRedirectedOutput: true)
         .MinimumLevel.Debug()
@@ -62,4 +66,17 @@ builder.Services.AddMassTransit(x =>
 });
 
 var host = builder.Build();
+host.UseRouting();
+host.MapHealthChecks("/health/ready", new HealthCheckOptions()
+{
+    Predicate = (check) => check.Tags.Contains("ready"),
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse,
+    ResultStatusCodes = {
+        [HealthStatus.Healthy] = StatusCodes.Status200OK,
+        [HealthStatus.Degraded] = StatusCodes.Status503ServiceUnavailable,
+        [HealthStatus.Unhealthy] = StatusCodes.Status503ServiceUnavailable,
+    },
+});
+
+host.MapHealthChecks("/health/live", new HealthCheckOptions());
 host.Run();

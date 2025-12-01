@@ -31,7 +31,9 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - Features__EnableRetry=true
-      - Features__UseErrorFilter=true
+      - Features__UseErrorFilter=false
+    ports:
+      - "8081:8080"
     networks:
       - rabbitmq_network
     restart: on-failure
@@ -46,10 +48,12 @@ services:
         condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - Features__UseErrorFilter=true
+      - Features__UseErrorFilter=false
       - Worker__DelayInMs=1000
       - Worker__BatchSize=5000
       - Worker__MaxMessages=25000
+    ports:
+      - "8080:8080"
     networks:
       - rabbitmq_network
     restart: on-failure

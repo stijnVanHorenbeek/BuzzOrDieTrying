@@ -20,6 +20,7 @@ RUN dotnet build "Producer.csproj" -c Release -o /app/build
 FROM build AS publish
 RUN dotnet publish "Producer.csproj" -c Release -o /app/publish
 
+EXPOSE 8080
 # Runtime
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app

@@ -16,17 +16,35 @@ public class RequestMessageConsumer : IConsumer<RequestMessage>
     {
         _logger.LogInformation("Received RequestMessage: {Text}", context.Message.Counter);
 
-        var message = context.Message;
+        var value = context.Message.Counter;
 
-        if (message.Counter % 2 == 0)
+        string result;
+        if (value % 3 == 0 && value % 5 == 0)
         {
-            throw CreateTestException();
+            throw CreateTestException(20);
+        }
+        if (value % 3 == 0)
+        {
+            result = "Fizz";
+            _logger.LogInformation("Received message: {Value} (Fizz)", value);
+        }
+        else if (value % 5 == 0)
+        {
+            result = "Buzz";
+            _logger.LogInformation("Received message: {Value} (Buzz)", value);
+        }
+        else
+        {
+            result = value.ToString();
+            _logger.LogInformation("Received message: {Value} ({Result})", value, result);
         }
 
-        await context.RespondAsync(new ResponseMessage
+        var responseMessage = new ResponseMessage
         {
-            Result = message.Counter.ToString()
-        });
+            Result = result
+        };
+
+        await context.RespondAsync(responseMessage);
     }
 
     static AggregateException CreateTestException(int value = 10)
